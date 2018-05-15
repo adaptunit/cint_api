@@ -13,7 +13,10 @@ defmodule CintApi do
     raise CintApi.ConfigError, message: "CintApi requires url"
   end
 
-  @type policy :: String.t | integer()
+  @type user :: map()
+  @type user_id :: String.t | integer()
+  @type query_string :: String.t
+  @type email :: String.t
   @type date :: String.t | %Date{}
 
 
@@ -22,49 +25,148 @@ defmodule CintApi do
   """
   @spec process_url(String.t) :: String.t
   def process_url(url) do
-    config(:url) <> url
+    url_endpoint = config(:url) <> "panels/" <> config(:client_key) <> url
+    # IO.puts("url_endpoint: #{url_endpoint}")
+    url_endpoint
+  end
+
+def error_status(status) do
+  case status do
+    {:ok, %{status_code: 400}} ->
+      {:error, CintApi.BadRequest}
+    {:ok, %{status_code: 401}} ->
+      {:error, CintApi.NotAuthorized}
+    {:ok, %{status_code: 403}} ->
+      {:error, CintApi.Forbidden}
+    {:ok, %{status_code: 404}} ->
+      {:error, CintApi.NotFound}
+    {:ok, %{status_code: 406}} ->
+      {:error, CintApi.NotAcceptable}
+    {:ok, %{status_code: 409}} ->
+      {:error, CintApi.Conflict}
+    {:ok, %{status_code: 412}} ->
+      {:error, CintApi.PreconditionFailed}
+    {:ok, %{status_code: 422}} ->
+      {:error, CintApi.UnprocessableEntity}
+    {:ok, %{status_code: 429}} ->
+      {:error, CintApi.TooManyRequests}
+    {:ok, %{status_code: 500}} ->
+      {:error, CintApi.InternalServerError}
+    {:error, _} ->
+      {:error, CintApi.ApiError}
+    _ ->
+    {:error, CintApi.GenericError}
+  end
+end
+
+  @doc """
+  Get panelists information by it's identifier.
+
+  The following options are supported:
+  """
+  @spec create_panelist_by_email(email, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
+  def create_panelist_by_email(email, opts \\ []) do
+    cint_request = %{panelist: %{email_address: email}}
+    headers = headers()
+    try do
+     {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post("/panelists", Poison.encode!(cint_request), headers, [])
+     # IO.puts("create_panelist_by_email: email:|#{email}| json_body:|#{json_body}| code:|#{code}| response_headers:|#{}|")
+     case code
+     do
+      201 ->
+       {:ok, response} = Poison.decode(json_body)
+      _ ->
+       {:error, %{status_code: code, body: %{}}}
+     end
+    rescue
+     e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
+    end
+
+    # with {:ok, %{body: json_body, status_code: 200}} <- CintApi.post("/panelists", Poison.encode!(cint_request), headers, []),
+    #   {:ok, response} <- Poison.decode(json_body)
+    # do
+    #   {:ok, response}
+    # else
+    #   {error_status} ->
+    #     CintApi.error_status(error_status)
+    # end
+  end
+
+  @doc """
+  Get panelists information by it's identifier.
+
+  The following options are supported:
+  """
+  @spec create_panelist(user, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
+  def create_panelist(user, opts \\ []) do
+    user_id = user.id
+    email_host = Application.get_env(:cint_api, :email)[:host]
+    create_panelist_by_email("#{user_id}@#{email_host}")
   end
 
 
   @doc """
-  Get policy information by it's number.
+  Get panelists information by it's identifier.
 
   The following options are supported:
-
-  * `:firstname`: check user first name
-  * `:lastname`: check user last name
-  * `:birthdate`: check user birth date in 09.11.1991 format
   """
-  @spec policy_status(policy, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
-  def policy_status(number, opts \\ []) do
-    policy_number = parse_policy_number(number)
-    params = parse_options(opts)
-
-    with {:ok, %{body: json_body, status_code: 200}} <-
-        CintApi.get("/policystatus/#{policy_number}?#{params}", headers()),
-      {:ok, response} <- Poison.decode(json_body)
-    do
-      {:ok, response}
-    else
-      {:ok, %{status_code: 400}} ->
-        {:error, CintApi.InvalidRequestData}
-      {:ok, %{status_code: 401}} ->
-        {:error, CintApi.NoSecurityHeader}
-      {:ok, %{status_code: 404}} ->
-        {:error, CintApi.PolicyNotFound}
-      {:ok, %{status_code: 406}} ->
-        {:error, CintApi.UnsupportedAcceptType}
-      {:ok, %{status_code: 409}} ->
-        {:error, CintApi.NoApplication}
-      {:ok, %{status_code: 500}} ->
-        {:error, CintApi.ApiError}
-      {:error, _} ->
-        {:error, CintApi.ApiError}
+  @spec retrieve_panelist(user_id, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
+  def retrieve_panelist(user_id, opts \\ []) do
+    defaults = [query_param: "email"]
+    options = Keyword.merge(defaults, opts) |> Enum.into(%{})
+    qp = Map.get(options, :query_param)
+    # IO.puts("qp: #{qp}")
+    # is_valid_param = if Enum.member?(["email", "member_id"], qp), do: :true, else: :false
+    case qp do
+      "email" ->
+          email_host = Application.get_env(:cint_api, :email)[:host]
+          # IO.puts("email_host: #{email_host}")
+          get_panelist("?#{qp}=#{user_id}@#{email_host}")
+      "member_id" ->
+          get_panelist("?#{qp}=#{user_id}")
       _ ->
-        {:error, CintApi.GenericError}
+        CintApi.error_status({:ok, %{status_code: 406}})
     end
   end
 
+  @spec get_panelist(query_string) :: {:ok, map()} | {:error, Exception.t} | no_return
+  defp get_panelist(query_string) do
+    headers = headers()
+    try do
+     {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.get("/panelists/#{query_string}", headers, [])
+     # IO.puts("json_body:|#{json_body}| code:|#{code}| response_headers:|#{}|")
+     # IO.inspect(response_headers)
+      case code # == 200 and json_body != ""
+      do
+       200 ->
+        {:ok, response} = Poison.decode(json_body)
+        # {:ok, response}
+       _ ->
+        {:error, %{status_code: code, body: %{}}}
+        # %HTTPoison.Response{status_code: code, headers: response_headers, body: "{}"}
+        # Poison.encode(%{status_code: code, body: %{}})
+        # CintApi.error_status({:ok, %{status_code: code}})
+      end
+     rescue
+      e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
+    end
+
+    # with {:ok, %{body: json_body, status_code: 200}} <-
+    #  CintApi.get("/panelists/#{query_string}", headers, []),
+    #  IO.puts("json_body:|#{json_body}|"), # code:|#{code}|"),
+    #  {:ok, response} <- Poison.decode(json_body)
+    # do
+    #  IO.puts("response: #{response}")
+    #  {:ok, response}
+    # else
+    #  {error_status} ->
+    #    IO.puts("error_status: #{error_status}")
+    #    CintApi.error_status(error_status)
+    # end
+  end
+  # user = if is_valid_param, do: user_id <> "@" <> Application.get_env(:client, :email)[:host], else: user_id
+  # email_host = Application.get_env(:client, :email)[:host]
+  # "@#{email_host}"
 
   @doc """
   Helper function to read global config in scope of this module.
@@ -79,7 +181,7 @@ defmodule CintApi do
   defp resolve_config(value, _default),
     do: value
 
-
+@doc """
   @spec parse_options(Keyword.t) :: String.t
   defp parse_options(opts) do
     params = Enum.reduce opts, %{}, fn(option, acc) ->
@@ -90,35 +192,29 @@ defmodule CintApi do
     end
     URI.encode_query(params)
   end
+"""
 
-  @spec parse_policy_number(policy) :: String.t
-  defp parse_policy_number(number) when is_integer(number), do: to_string(number)
-  defp parse_policy_number(number) when is_bitstring(number), do: number
 
-  @spec parse_param(String.t) :: String.t
-  defp parse_param(param) when is_bitstring(param) do
-    String.replace(param, " ", "+")
-  end
 
-  @spec parse_birthdate(date) :: String.t
-  defp parse_birthdate(%Date{} = date) do
-    "#{to_string(date.day)}.#{to_string(date.month)}.#{to_string(date.year)}"
+  defp access_token do
+    client_key = Application.get_env(:cint_api, CintApi)[:client_key]
+    client_secret = Application.get_env(:cint_api, CintApi)[:client_secret]
+    auth_token = Base.encode64("#{client_key}:#{client_secret}", padding: false)
+    # auth_token = Base.encode64("#{client_key}:#{client_secret}")
+    token = "Basic #{auth_token}"
+    # IO.puts("client_key: #{client_key} : client_secret: #{client_secret} auth_token: #{auth_token} token: #{token}")
+    # token = "Basic " <> Base.encode64("#{client_key}:#{client_secret}")
+    # token = "Basic " <> Base.encode64("#{client_key}:#{client_secret}", padding: false)
+    # Macro.escape(token)
+    token
   end
-  defp parse_birthdate(<< _day::bytes-size(2) >> <> "." <> << _month::bytes-size(2) >>
-  <> "." <> << _year::bytes-size(4) >> = param) do
-    param
-  end
-  defp parse_birthdate(_param) do
-    raise CintApi.InvalidRequestData,
-      message: "Use %Date{} struct or DD.MM.YYYY as birthdate format"
-  end
-
 
   # Default headers added to all requests
   defp headers do
     [
       {"Content-Type", "application/json"},
-      {"Accept", "application/json"}
+      {"Accept", "application/json"},
+      {"Authorization", access_token()}
     ]
   end
 end
