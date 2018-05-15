@@ -25,7 +25,7 @@ defmodule CintApi.Mixfile do
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
       {:hackney, "~> 1.6"},
       {:httpoison, "~> 0.9.2"},
-      {:poison, "~> 3.0"},
+      {:poison, "~> 2.0"},
       {:uuid, "~> 1.1"},
       {:earmark, ">= 0.0.0", only: :dev},
       {:ex_doc, ">= 0.0.0", only: :dev},
