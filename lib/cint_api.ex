@@ -118,24 +118,28 @@ end
   @spec update_panelist(email, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
   def update_panelist(panelist, opts \\ []) do
     cint_request = panelist # %{panelist: %{email_address: email}}
-    panelist_id = get_in(opts, ["cint_id"])
-    headers = headers()
-    patch_panelist_address = "/panelists/" <> panelist_id
-    try do
-     {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.patch(patch_panelist_address, Poison.encode!(cint_request), headers, [])
-     IO.puts("\n\nupdate_panelist: json_body:|#{json_body}| code:|#{code}|")
-     IO.inspect(json_body)
-     IO.puts("\n\nupdate_panelist: response_headers:|#{}|")
-     IO.inspect(response_headers)
-     case code
-     do
-      201 ->
-       {:ok, response} = Poison.decode(json_body)
-      _ ->
-       {:error, %{status_code: code, body: %{}}}
-     end
-    rescue
-     e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
+    if Map.has_key?(opts, :cint_id) do
+      panelist_id = opts.cint_id # get_in(opts, ["cint_id"])
+      headers = headers()
+      patch_panelist_address = "/panelists/" <> panelist_id
+      try do
+       {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.patch(patch_panelist_address, Poison.encode!(cint_request), headers, [])
+       IO.puts("\n\nupdate_panelist: json_body:|#{json_body}| code:|#{code}|")
+       IO.inspect(json_body)
+       IO.puts("\n\nupdate_panelist: response_headers:|#{}|")
+       IO.inspect(response_headers)
+       case code
+       do
+        201 ->
+         {:ok, response} = Poison.decode(json_body)
+        _ ->
+         {:error, %{status_code: code, body: %{}}}
+       end
+      rescue
+       e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
+      end
+    else
+      {:error, %{status_code: 422, body: %{}}}
     end
   end
 
