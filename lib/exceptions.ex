@@ -31,7 +31,8 @@ defmodule CintApi.NotFound do
   Raised in case no valid policy is found by the supplied criteria. The service is far too lazy to give us a real reason why our request failed, but
 whatever the reason, it needs to be dealt with.
   """
-  defexception [:message]
+  # defexception [:message]
+  defexception message: "not found"
 end
 
 defmodule CintApi.MethodNotAllowed do

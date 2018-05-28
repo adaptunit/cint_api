@@ -70,7 +70,10 @@ end
     headers = headers()
     try do
      {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post("/panelists", Poison.encode!(cint_request), headers, [])
-     # IO.puts("create_panelist_by_email: email:|#{email}| json_body:|#{json_body}| code:|#{code}| response_headers:|#{}|")
+     IO.puts("\n\ncreate_panelist_by_email: email:|#{email}| json_body:|#{json_body}| code:|#{code}|")
+     IO.inspect(json_body)
+     IO.puts("\n\nresponse_headers:|#{}|")
+     IO.inspect(response_headers)
      case code
      do
       201 ->
@@ -93,15 +96,47 @@ end
   end
 
   @doc """
-  Get panelists information by it's identifier.
+  Create CINT Panelist by given parameter with structure like %User{id: ""}
+  where function will makes email address user.id <> "@email host from configuration"
 
   The following options are supported:
   """
-  @spec create_panelist(user, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
-  def create_panelist(user, opts \\ []) do
+  @spec create_panelist_by_user(user, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
+  def create_panelist_by_user(user, opts \\ []) do
     user_id = user.id
     email_host = Application.get_env(:cint_api, :email)[:host]
     create_panelist_by_email("#{user_id}@#{email_host}")
+  end
+
+  @spec create_panelist(struct()) :: {:ok, map()} | {:error, Exception.t} | no_return
+  def create_panelist(struct) do
+    user_email_address = struct.panelist.email_address
+    create_panelist_by_email("#{user_email_address}")
+  end
+
+
+  @spec update_panelist(email, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
+  def update_panelist(panelist, opts \\ []) do
+    cint_request = panelist # %{panelist: %{email_address: email}}
+    panelist_id = get_in(opts, ["cint_id"])
+    headers = headers()
+    patch_panelist_address = "/panelists/" <> panelist_id
+    try do
+     {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.patch(patch_panelist_address, Poison.encode!(cint_request), headers, [])
+     IO.puts("\n\ncreate_panelist_by_email: email:|#{email}| json_body:|#{json_body}| code:|#{code}|")
+     IO.inspect(json_body)
+     IO.puts("\n\nncreate_panelist_by_email: response_headers:|#{}|")
+     IO.inspect(response_headers)
+     case code
+     do
+      201 ->
+       {:ok, response} = Poison.decode(json_body)
+      _ ->
+       {:error, %{status_code: code, body: %{}}}
+     end
+    rescue
+     e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
+    end
   end
 
 
@@ -115,7 +150,7 @@ end
     defaults = [query_param: "email"]
     options = Keyword.merge(defaults, opts) |> Enum.into(%{})
     qp = Map.get(options, :query_param)
-    # IO.puts("qp: #{qp}")
+    IO.puts("qp: #{qp}")
     # is_valid_param = if Enum.member?(["email", "member_id"], qp), do: :true, else: :false
     case qp do
       "email" ->
@@ -125,7 +160,7 @@ end
       "member_id" ->
           get_panelist("?#{qp}=#{user_id}")
       _ ->
-        CintApi.error_status({:ok, %{status_code: 406}})
+        CintApi.error_status({:ok, %{status_code: 406}}) # Not Acceptable
     end
   end
 
@@ -134,13 +169,18 @@ end
     headers = headers()
     try do
      {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.get("/panelists/#{query_string}", headers, [])
-     # IO.puts("json_body:|#{json_body}| code:|#{code}| response_headers:|#{}|")
-     # IO.inspect(response_headers)
+     IO.puts("json_body:|#{json_body}| code:|#{code}| response_headers:|#{}|query_string:|#{query_string}|")
+     IO.inspect(response_headers)
       case code # == 200 and json_body != ""
       do
        200 ->
         {:ok, response} = Poison.decode(json_body)
         # {:ok, response}
+       302 ->
+        {:ok, response} = Poison.decode(json_body)
+       404 ->
+        # CintApi.error_status({:ok, %{status_code: code, message: "not found"}})
+        {:error, %{status_code: code, error: CintApi.NotFound, message: "not found"}}
        _ ->
         {:error, %{status_code: code, body: %{}}}
         # %HTTPoison.Response{status_code: code, headers: response_headers, body: "{}"}
@@ -193,19 +233,16 @@ end
     URI.encode_query(params)
   end
 """
-
-
-
-  defp access_token do
+  def access_token do
     client_key = Application.get_env(:cint_api, CintApi)[:client_key]
     client_secret = Application.get_env(:cint_api, CintApi)[:client_secret]
     auth_token = Base.encode64("#{client_key}:#{client_secret}", padding: false)
-    # auth_token = Base.encode64("#{client_key}:#{client_secret}")
+  end
+
+
+  def access_token_header_basic do
+    auth_token = access_token()
     token = "Basic #{auth_token}"
-    # IO.puts("client_key: #{client_key} : client_secret: #{client_secret} auth_token: #{auth_token} token: #{token}")
-    # token = "Basic " <> Base.encode64("#{client_key}:#{client_secret}")
-    # token = "Basic " <> Base.encode64("#{client_key}:#{client_secret}", padding: false)
-    # Macro.escape(token)
     token
   end
 
@@ -214,7 +251,7 @@ end
     [
       {"Content-Type", "application/json"},
       {"Accept", "application/json"},
-      {"Authorization", access_token()}
+      {"Authorization", access_token_header_basic()}
     ]
   end
 end
