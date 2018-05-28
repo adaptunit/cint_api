@@ -123,9 +123,9 @@ end
     patch_panelist_address = "/panelists/" <> panelist_id
     try do
      {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.patch(patch_panelist_address, Poison.encode!(cint_request), headers, [])
-     IO.puts("\n\ncreate_panelist_by_email: email:|#{email}| json_body:|#{json_body}| code:|#{code}|")
+     IO.puts("\n\nupdate_panelist: json_body:|#{json_body}| code:|#{code}|")
      IO.inspect(json_body)
-     IO.puts("\n\nncreate_panelist_by_email: response_headers:|#{}|")
+     IO.puts("\n\nupdate_panelist: response_headers:|#{}|")
      IO.inspect(response_headers)
      case code
      do

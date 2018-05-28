@@ -4,7 +4,7 @@ defmodule CintApi.Mixfile do
   def project do
     [
       app: :cint_api,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.4",
       start_permanent: Mix.env == :prod,
       deps: deps()
