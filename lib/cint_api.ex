@@ -125,7 +125,7 @@ end
       IO.puts("\n\nCintApi: update_panelist:")
       IO.inspect(panelist_id)
       headers = headers()
-      patch_panelist_address = "/panelists/" <> panelist_id
+      patch_panelist_address = "/panelists/" <> Kernel.inspect(panelist_id)
       try do
        {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.patch(patch_panelist_address, Poison.encode!(cint_request), headers, [])
        IO.puts("\n\nCintApi: update_panelist: json_body:|#{json_body}| code:|#{code}|")
