@@ -118,15 +118,19 @@ end
   @spec update_panelist(email, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
   def update_panelist(panelist, opts \\ []) do
     cint_request = panelist # %{panelist: %{email_address: email}}
+    IO.puts("\n\nCintApi: update_panelist: opts:")
+    IO.inspect(opts)
     if Map.has_key?(opts, :cint_id) do
       panelist_id = opts.cint_id # get_in(opts, ["cint_id"])
+      IO.puts("\n\nCintApi: update_panelist:")
+      IO.inspect(panelist_id)
       headers = headers()
       patch_panelist_address = "/panelists/" <> panelist_id
       try do
        {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.patch(patch_panelist_address, Poison.encode!(cint_request), headers, [])
-       IO.puts("\n\nupdate_panelist: json_body:|#{json_body}| code:|#{code}|")
+       IO.puts("\n\nCintApi: update_panelist: json_body:|#{json_body}| code:|#{code}|")
        IO.inspect(json_body)
-       IO.puts("\n\nupdate_panelist: response_headers:|#{}|")
+       IO.puts("\n\nCintApi: update_panelist: response_headers:|#{}|")
        IO.inspect(response_headers)
        case code
        do
