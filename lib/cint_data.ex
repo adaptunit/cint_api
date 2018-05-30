@@ -1,4 +1,4 @@
-defmodule CintData do
+defmodule CintApi.CintData do
   defmodule Panelist do
     @type t :: %__MODULE__{
      email_address: String.t,
