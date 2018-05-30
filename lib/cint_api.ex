@@ -5,6 +5,7 @@ defmodule CintApi do
 
   use HTTPoison.Base
 
+  
   unless Application.get_env(:cint_api, CintApi) do
     raise CintApi.ConfigError, message: "CintApi is not configured"
   end
