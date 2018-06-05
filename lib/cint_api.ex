@@ -77,6 +77,8 @@ end
      end
 
     headers = headers()
+    IO.puts("\n\ncreate_panelist_by_email:")
+    IO.inspect(cint_request)
 
     try do
      {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post("/panelists", Poison.encode!(cint_request), headers, [])
