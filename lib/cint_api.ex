@@ -5,7 +5,7 @@ defmodule CintApi do
 
   use HTTPoison.Base
 
-  
+
   unless Application.get_env(:cint_api, CintApi) do
     raise CintApi.ConfigError, message: "CintApi is not configured"
   end
@@ -68,7 +68,16 @@ end
   @spec create_panelist_by_email(email, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
   def create_panelist_by_email(email, opts \\ []) do
     cint_request = %{panelist: %{email_address: email}}
+    cint_request =
+     case Map.has_key?(opts, :member_id) do
+      true ->
+       Map.put(cint_request, :member_id, opts.member_id)
+      false ->
+       cint_request
+     end
+
     headers = headers()
+
     try do
      {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post("/panelists", Poison.encode!(cint_request), headers, [])
      IO.puts("\n\ncreate_panelist_by_email: email:|#{email}| json_body:|#{json_body}| code:|#{code}|")
