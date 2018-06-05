@@ -71,7 +71,7 @@ end
     cint_request =
      case Map.has_key?(opts, :member_id) do
       true ->
-       Map.put(cint_request, :member_id, opts.member_id)
+       put_in(cint_request, [:panelist, :member_id], opts.member_id)
       false ->
        cint_request
      end
