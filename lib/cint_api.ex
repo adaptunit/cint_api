@@ -27,7 +27,7 @@ defmodule CintApi do
   @spec process_url(String.t) :: String.t
   def process_url(url) do
     url_endpoint = config(:url) <> "panels/" <> config(:client_key) <> url
-    # IO.puts("url_endpoint: #{url_endpoint}")
+    IO.puts("url_endpoint: #{url_endpoint}")
     url_endpoint
   end
 
@@ -228,6 +228,59 @@ end
   # email_host = Application.get_env(:client, :email)[:host]
   # "@#{email_host}"
 
+
+  @doc """
+  Create Candidate Respondent Session.
+
+  The following options are supported:
+  """
+  # @spec create_candidate_respondent_session(panelist, String.t) :: {:ok, map()} | {:error, Exception.t} | no_return
+  def create_candidate_respondent_session(panelist, opts)
+  def create_candidate_respondent_session(panelist, opts) when is_integer(panelist) do
+    create_candidate_respondent_session(to_string(panelist), opts)
+  end
+  def create_candidate_respondent_session(panelist, opts \\ []) when is_bitstring(panelist) do
+    if !is_nil(panelist) do
+      # IO.puts("\n\nCintApi: create_candidate_respondent_session:")
+      # IO.inspect(panelist)
+
+      headers = headers()
+      # IO.puts("\n\nCintApi: create_candidate_respondent_session: headers:")
+      # IO.inspect(headers)
+      candidate_respondents_address = "/panelists/" <> panelist <> "/candidate_respondents"# <> Kernel.inspect(panelist)
+      # IO.inspect(candidate_respondents_address)
+      try do
+       {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post(candidate_respondents_address, Poison.encode!(%{}), headers, [])
+       # IO.puts("\n\nCintApi: create_candidate_respondent_session: json_body:|#{json_body}| code:|#{code}|")
+       # IO.inspect(response_headers)
+
+        case code
+        do
+         201 ->
+          {:ok, response} = Poison.decode(json_body)
+         404 ->
+          {:error, %{status_code: code, error: CintApi.NotFound, message: "not found"}}
+         422 ->
+          {:error, %{status_code: code, error: CintApi.UnprocessableEntity, message: "unprocessable entity"}}
+         _ ->
+          {:error, %{status_code: code, body: %{}}}
+        end
+       rescue
+        e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
+      end
+    end
+  end
+
+  def create_candidate_respondent_session(panelist, opts) when is_map(panelist) do
+    if Map.has_key?(panelist, :cint_id) do
+      cinst_id = Map.get(panelist, :cint_id)
+      cinst_id_str = Kernel.inspect(cinst_id)
+      create_candidate_respondent_session(cinst_id_str)
+    end
+  end
+
+
+
   @doc """
   Helper function to read global config in scope of this module.
   """
@@ -256,7 +309,7 @@ end
   def access_token do
     client_key = Application.get_env(:cint_api, CintApi)[:client_key]
     client_secret = Application.get_env(:cint_api, CintApi)[:client_secret]
-    auth_token = Base.encode64("#{client_key}:#{client_secret}", padding: false)
+    auth_token = Base.encode64("#{client_key}:#{client_secret}", padding: true) # padding: false
   end
 
 
