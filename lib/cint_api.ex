@@ -27,7 +27,7 @@ defmodule CintApi do
   @spec process_url(String.t) :: String.t
   def process_url(url) do
     url_endpoint = config(:url) <> "panels/" <> config(:client_key) <> url
-    IO.puts("url_endpoint: #{url_endpoint}")
+    # IO.puts("url_endpoint: #{url_endpoint}")
     url_endpoint
   end
 
@@ -77,15 +77,15 @@ end
      end
 
     headers = headers()
-    IO.puts("\n\ncreate_panelist_by_email:")
-    IO.inspect(cint_request)
+    # IO.puts("\n\ncreate_panelist_by_email:")
+    # IO.inspect(cint_request)
 
     try do
      {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post("/panelists", Poison.encode!(cint_request), headers, [])
      IO.puts("\n\ncreate_panelist_by_email: email:|#{email}| json_body:|#{json_body}| code:|#{code}|")
-     IO.inspect(json_body)
-     IO.puts("\n\nresponse_headers:|#{}|")
-     IO.inspect(response_headers)
+     # IO.inspect(json_body)
+     # IO.puts("\n\nresponse_headers:|#{}|")
+     # IO.inspect(response_headers)
      case code
      do
       201 ->
@@ -130,20 +130,20 @@ end
   @spec update_panelist(email, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
   def update_panelist(panelist, opts \\ []) do
     cint_request = panelist # %{panelist: %{email_address: email}}
-    IO.puts("\n\nCintApi: update_panelist: opts:")
-    IO.inspect(opts)
+    # IO.puts("\n\nCintApi: update_panelist: opts:")
+    # IO.inspect(opts)
     if Map.has_key?(opts, :cint_id) do
       panelist_id = opts.cint_id # get_in(opts, ["cint_id"])
-      IO.puts("\n\nCintApi: update_panelist:")
-      IO.inspect(panelist_id)
+      # IO.puts("\n\nCintApi: update_panelist:")
+      # IO.inspect(panelist_id)
       headers = headers()
       patch_panelist_address = "/panelists/" <> Kernel.inspect(panelist_id)
       try do
        {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.patch(patch_panelist_address, Poison.encode!(cint_request), headers, [])
-       IO.puts("\n\nCintApi: update_panelist: json_body:|#{json_body}| code:|#{code}|")
-       IO.inspect(json_body)
-       IO.puts("\n\nCintApi: update_panelist: response_headers:|#{}|")
-       IO.inspect(response_headers)
+       # IO.puts("\n\nCintApi: update_panelist: json_body:|#{json_body}| code:|#{code}|")
+       # IO.inspect(json_body)
+       # IO.puts("\n\nCintApi: update_panelist: response_headers:|#{}|")
+       # IO.inspect(response_headers)
        case code
        do
         201 ->
@@ -170,7 +170,7 @@ end
     defaults = [query_param: "email"]
     options = Keyword.merge(defaults, opts) |> Enum.into(%{})
     qp = Map.get(options, :query_param)
-    IO.puts("qp: #{qp}")
+    # IO.puts("qp: #{qp}")
     # is_valid_param = if Enum.member?(["email", "member_id"], qp), do: :true, else: :false
     case qp do
       "email" ->
@@ -189,8 +189,8 @@ end
     headers = headers()
     try do
      {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.get("/panelists/#{query_string}", headers, [])
-     IO.puts("json_body:|#{json_body}| code:|#{code}| response_headers:|#{}|query_string:|#{query_string}|")
-     IO.inspect(response_headers)
+     # IO.puts("json_body:|#{json_body}| code:|#{code}| response_headers:|#{}|query_string:|#{query_string}|")
+     # IO.inspect(response_headers)
       case code # == 200 and json_body != ""
       do
        200 ->
