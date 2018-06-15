@@ -91,7 +91,7 @@ end
       201 ->
        {:ok, response} = Poison.decode(json_body)
       _ ->
-       {:error, %{status_code: code, body: %{}}}
+       {:error, %{status_code: code, body: json_body}}
      end
     rescue
      e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
