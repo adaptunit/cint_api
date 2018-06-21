@@ -27,6 +27,7 @@ defmodule CintApi.Mixfile do
       {:httpoison, "~> 0.9.2"},
       {:poison, "~> 2.0"},
       {:uuid, "~> 1.1"},
+      {:phoenix_ecto, "~> 3.0"},
       {:earmark, ">= 0.0.0", only: :dev},
       {:ex_doc, ">= 0.0.0", only: :dev},
     ]
