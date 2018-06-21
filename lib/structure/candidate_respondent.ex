@@ -8,7 +8,7 @@ defmodule CandidateRespondent do
 
     schema "candidate_respondent" do
         field :respondent_params, :string
-        field :quota_ids, :map
+        field :quota_ids, {:array, :integer} # :map
         field :allow_routing, :boolean
         field :min_cpi, :float
         field :min_cr, :integer
