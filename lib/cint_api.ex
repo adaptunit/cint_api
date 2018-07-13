@@ -142,31 +142,39 @@ end
     IO.inspect(opts)
     # str_country_code_iso = Map.get(opts, :code_iso, nil)
     # country_code_iso = config(:client_key)
+    country_code_iso = String.to_atom(Map.get(opts, :ref_country, "nil"))
 
-    if Map.has_key?(opts, :cint_id) do
-      panelist_id = opts.cint_id # get_in(opts, ["cint_id"])
-      # IO.puts("\n\nCintApi: update_panelist:")
-      # IO.inspect(panelist_id)
-      headers = headers()
-      patch_panelist_address = "/panelists/" <> Kernel.inspect(panelist_id)
-      try do
-       {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.patch(patch_panelist_address, Poison.encode!(cint_request), headers, [])
-       # IO.puts("\n\nCintApi: update_panelist: json_body:|#{json_body}| code:|#{code}|")
-       # IO.inspect(json_body)
-       # IO.puts("\n\nCintApi: update_panelist: response_headers:|#{}|")
-       # IO.inspect(response_headers)
-       case code
-       do
-        201 ->
-         {:ok, response} = Poison.decode(json_body)
-        _ ->
-         {:error, %{status_code: code, body: %{}}}
-       end
-      rescue
-       e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
+    if country_code_iso != nil do
+      headers = headers(country_code_iso)
+      IO.puts("\n\ncreate_panelist_by_email: headers:")
+
+      if Map.has_key?(opts, :cint_id) do
+        panelist_id = opts.cint_id # get_in(opts, ["cint_id"])
+        # IO.puts("\n\nCintApi: update_panelist:")
+        # IO.inspect(panelist_id)
+        # headers = headers()
+        patch_panelist_address = "/panelists/" <> Kernel.inspect(panelist_id)
+        try do
+         {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.patch(patch_panelist_address, Poison.encode!(cint_request), headers, [])
+         # IO.puts("\n\nCintApi: update_panelist: json_body:|#{json_body}| code:|#{code}|")
+         # IO.inspect(json_body)
+         # IO.puts("\n\nCintApi: update_panelist: response_headers:|#{}|")
+         # IO.inspect(response_headers)
+         case code
+         do
+          201 ->
+           {:ok, response} = Poison.decode(json_body)
+          _ ->
+           {:error, %{status_code: code, body: %{}}}
+         end
+        rescue
+         e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
+        end
+      else
+        {:error, %{status_code: 422, body: %{}}}
       end
     else
-      {:error, %{status_code: 422, body: %{}}}
+      IO.puts("An error occurred: No `ref_country` options found")
     end
   end
 
