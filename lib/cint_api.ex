@@ -26,7 +26,8 @@ defmodule CintApi do
   """
   @spec process_url(String.t) :: String.t
   def process_url(url) do
-    url_endpoint = config(:url) <> "panels/" <> config(:client_key) <> url
+    url_endpoint = config(:url) <> "panels/" <> url
+    #url_endpoint = config(:url) <> "panels/" <> config(:client_key) <> url
     # IO.puts("url_endpoint: #{url_endpoint}")
     url_endpoint
   end
@@ -76,25 +77,31 @@ end
        cint_request
      end
 
-    headers = headers()
-    # IO.puts("\n\ncreate_panelist_by_email:")
-    # IO.inspect(cint_request)
+    country_code_iso = String.to_atom(Map.get(opts, "ref_country", "nil"))
 
-    try do
-     {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post("/panelists", Poison.encode!(cint_request), headers, [])
-     IO.puts("\n\ncreate_panelist_by_email: email:|#{email}| json_body:|#{json_body}| code:|#{code}|")
-     # IO.inspect(json_body)
-     # IO.puts("\n\nresponse_headers:|#{}|")
-     # IO.inspect(response_headers)
-     case code
-     do
-      201 ->
-       {:ok, response} = Poison.decode(json_body)
-      _ ->
-       {:error, %{status_code: code, body: json_body}}
-     end
-    rescue
-     e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
+    if country_code_iso != nil do
+      headers = headers(country_code_iso)
+      IO.puts("\n\ncreate_panelist_by_email: headers:")
+      IO.inspect(headers)
+
+      try do
+       {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post("/panelists", Poison.encode!(cint_request), headers, [])
+       IO.puts("\n\ncreate_panelist_by_email: email:|#{email}| json_body:|#{json_body}| code:|#{code}|")
+       # IO.inspect(json_body)
+       # IO.puts("\n\nresponse_headers:|#{}|")
+       # IO.inspect(response_headers)
+       case code
+       do
+        201 ->
+         {:ok, response} = Poison.decode(json_body)
+        _ ->
+         {:error, %{status_code: code, body: json_body}}
+       end
+      rescue
+       e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
+      end
+    else
+     IO.puts("An error occurred: No `ref_country` options found")
     end
 
     # with {:ok, %{body: json_body, status_code: 200}} <- CintApi.post("/panelists", Poison.encode!(cint_request), headers, []),
@@ -130,8 +137,12 @@ end
   @spec update_panelist(email, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
   def update_panelist(panelist, opts \\ []) do
     cint_request = panelist # %{panelist: %{email_address: email}}
-    # IO.puts("\n\nCintApi: update_panelist: opts:")
-    # IO.inspect(opts)
+
+    IO.puts("\n\nCintApi: update_panelist: opts:")
+    IO.inspect(opts)
+    # str_country_code_iso = Map.get(opts, :code_iso, nil)
+    # country_code_iso = config(:client_key)
+
     if Map.has_key?(opts, :cint_id) do
       panelist_id = opts.cint_id # get_in(opts, ["cint_id"])
       # IO.puts("\n\nCintApi: update_panelist:")
@@ -306,25 +317,30 @@ end
     URI.encode_query(params)
   end
 """
-  def access_token do
-    client_key = Application.get_env(:cint_api, CintApi)[:client_key]
-    client_secret = Application.get_env(:cint_api, CintApi)[:client_secret]
+  def access_token(country_code_iso) do
+    countryKeys = Application.get_env(:cint_api, CintApi)[country_code_iso]
+    IO.puts("\n\nCintApi: access_token: country_code_iso:")
+    IO.inspect(country_code_iso)
+    IO.inspect(countryKeys)
+    
+    client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
+    client_secret = Application.get_env(:cint_api, CintApi)country_code_iso[:client_secret]
     auth_token = Base.encode64("#{client_key}:#{client_secret}", padding: true) # padding: false
   end
 
 
-  def access_token_header_basic do
-    auth_token = access_token()
+  def access_token_header_basic(country_code_iso) do
+    auth_token = access_token(country_code_iso)
     token = "Basic #{auth_token}"
     token
   end
 
   # Default headers added to all requests
-  defp headers do
+  defp headers(country_code_iso) do
     [
       {"Content-Type", "application/json"},
       {"Accept", "application/json"},
-      {"Authorization", access_token_header_basic()}
+      {"Authorization", access_token_header_basic(country_code_iso)}
     ]
   end
 end
