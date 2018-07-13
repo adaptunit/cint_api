@@ -322,9 +322,9 @@ end
     IO.puts("\n\nCintApi: access_token: country_code_iso:")
     IO.inspect(country_code_iso)
     IO.inspect(countryKeys)
-    
+
     client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
-    client_secret = Application.get_env(:cint_api, CintApi)country_code_iso[:client_secret]
+    client_secret = Application.get_env(:cint_api, CintApi)[country_code_iso[:client_secret]
     auth_token = Base.encode64("#{client_key}:#{client_secret}", padding: true) # padding: false
   end
 
