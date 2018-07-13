@@ -101,7 +101,7 @@ end
        e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
       end
     else
-     IO.puts("An error occurred: No `ref_country` options found")
+     IO.puts("An error occurred: create_panelist_by_email: No `ref_country` options found")
     end
 
     # with {:ok, %{body: json_body, status_code: 200}} <- CintApi.post("/panelists", Poison.encode!(cint_request), headers, []),
@@ -174,7 +174,7 @@ end
         {:error, %{status_code: 422, body: %{}}}
       end
     else
-      IO.puts("An error occurred: No `ref_country` options found")
+      IO.puts("An error occurred: update_panelist: No `ref_country` options found")
     end
   end
 
@@ -195,39 +195,45 @@ end
       "email" ->
           email_host = Application.get_env(:cint_api, :email)[:host]
           # IO.puts("email_host: #{email_host}")
-          get_panelist("?#{qp}=#{user_id}@#{email_host}")
+          get_panelist("?#{qp}=#{user_id}@#{email_host}", opts)
       "member_id" ->
-          get_panelist("?#{qp}=#{user_id}")
+          get_panelist("?#{qp}=#{user_id}", opts)
       _ ->
         CintApi.error_status({:ok, %{status_code: 406}}) # Not Acceptable
     end
   end
 
-  @spec get_panelist(query_string) :: {:ok, map()} | {:error, Exception.t} | no_return
-  defp get_panelist(query_string) do
-    headers = headers()
-    try do
-     {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.get("/panelists/#{query_string}", headers, [])
-     # IO.puts("json_body:|#{json_body}| code:|#{code}| response_headers:|#{}|query_string:|#{query_string}|")
-     # IO.inspect(response_headers)
-      case code # == 200 and json_body != ""
-      do
-       200 ->
-        {:ok, response} = Poison.decode(json_body)
-        # {:ok, response}
-       302 ->
-        {:ok, response} = Poison.decode(json_body)
-       404 ->
-        # CintApi.error_status({:ok, %{status_code: code, message: "not found"}})
-        {:error, %{status_code: code, error: CintApi.NotFound, message: "not found"}}
-       _ ->
-        {:error, %{status_code: code, body: %{}}}
-        # %HTTPoison.Response{status_code: code, headers: response_headers, body: "{}"}
-        # Poison.encode(%{status_code: code, body: %{}})
-        # CintApi.error_status({:ok, %{status_code: code}})
+  @spec get_panelist(query_string, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
+  defp get_panelist(query_string, opts \\ []) do
+    country_code_iso = String.to_atom(Map.get(opts, :ref_country, "nil"))
+
+    if country_code_iso != nil do
+      headers = headers(country_code_iso)
+      try do
+       {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.get("/panelists/#{query_string}", headers, [])
+       # IO.puts("json_body:|#{json_body}| code:|#{code}| response_headers:|#{}|query_string:|#{query_string}|")
+       # IO.inspect(response_headers)
+        case code # == 200 and json_body != ""
+        do
+         200 ->
+          {:ok, response} = Poison.decode(json_body)
+          # {:ok, response}
+         302 ->
+          {:ok, response} = Poison.decode(json_body)
+         404 ->
+          # CintApi.error_status({:ok, %{status_code: code, message: "not found"}})
+          {:error, %{status_code: code, error: CintApi.NotFound, message: "not found"}}
+         _ ->
+          {:error, %{status_code: code, body: %{}}}
+          # %HTTPoison.Response{status_code: code, headers: response_headers, body: "{}"}
+          # Poison.encode(%{status_code: code, body: %{}})
+          # CintApi.error_status({:ok, %{status_code: code}})
+        end
+       rescue
+        e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
       end
-     rescue
-      e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
+      else
+        IO.puts("An error occurred: get_panelist: No `ref_country` options found")
     end
 
     # with {:ok, %{body: json_body, status_code: 200}} <-
@@ -262,30 +268,35 @@ end
     if !is_nil(panelist) do
       # IO.puts("\n\nCintApi: create_candidate_respondent_session:")
       # IO.inspect(panelist)
+      country_code_iso = String.to_atom(Map.get(opts, :ref_country, "nil"))
 
-      headers = headers()
-      # IO.puts("\n\nCintApi: create_candidate_respondent_session: headers:")
-      # IO.inspect(headers)
-      candidate_respondents_address = "/panelists/" <> panelist <> "/candidate_respondents"# <> Kernel.inspect(panelist)
-      # IO.inspect(candidate_respondents_address)
-      try do
-       {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post(candidate_respondents_address, Poison.encode!(%{}), headers, [])
-       # IO.puts("\n\nCintApi: create_candidate_respondent_session: json_body:|#{json_body}| code:|#{code}|")
-       # IO.inspect(response_headers)
+      if country_code_iso != nil do
+        headers = headers(country_code_iso)
 
-        case code
-        do
-         201 ->
-          {:ok, response} = Poison.decode(json_body)
-         404 ->
-          {:error, %{status_code: code, error: CintApi.NotFound, message: "not found"}}
-         422 ->
-          {:error, %{status_code: code, error: CintApi.UnprocessableEntity, message: "unprocessable entity"}}
-         _ ->
-          {:error, %{status_code: code, body: %{}}}
+        # headers = headers()
+        # IO.puts("\n\nCintApi: create_candidate_respondent_session: headers:")
+        # IO.inspect(headers)
+        candidate_respondents_address = "/panelists/" <> panelist <> "/candidate_respondents"# <> Kernel.inspect(panelist)
+        # IO.inspect(candidate_respondents_address)
+        try do
+         {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post(candidate_respondents_address, Poison.encode!(%{}), headers, [])
+         # IO.puts("\n\nCintApi: create_candidate_respondent_session: json_body:|#{json_body}| code:|#{code}|")
+         # IO.inspect(response_headers)
+          case code
+          do
+           201 ->
+            {:ok, response} = Poison.decode(json_body)
+           404 ->
+            {:error, %{status_code: code, error: CintApi.NotFound, message: "not found"}}
+           422 ->
+            {:error, %{status_code: code, error: CintApi.UnprocessableEntity, message: "unprocessable entity"}}
+           _ ->
+            {:error, %{status_code: code, body: %{}}}
+          end
+         rescue
+          e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
         end
-       rescue
-        e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
+      else
       end
     end
   end
