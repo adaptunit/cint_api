@@ -78,8 +78,9 @@ end
      end
 
     country_code_iso = String.to_atom(Map.get(opts, :code_iso, "nil"))
+    isCountryExist = Application.get_env(:cint_api, CintApi)[country_code_iso]
 
-    if country_code_iso != nil do
+    if country_code_iso != nil and isCountryExist != nil do
       headers = headers(country_code_iso)
       client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
       IO.puts("\n\ncreate_panelist_by_email: #{client_key} headers:")
@@ -144,8 +145,9 @@ end
     # str_country_code_iso = Map.get(opts, :code_iso, nil)
     # country_code_iso = config(:client_key)
     country_code_iso = String.to_atom(Map.get(opts, :code_iso, "nil"))
+    isCountryExist = Application.get_env(:cint_api, CintApi)[country_code_iso]
 
-    if country_code_iso != nil do
+    if country_code_iso != nil and isCountryExist != nil do
       headers = headers(country_code_iso)
       IO.puts("\n\ncreate_panelist_by_email: headers:")
 
@@ -190,6 +192,8 @@ end
   @spec retrieve_panelist(user_id, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
   def retrieve_panelist(user_id, opts \\ []) do
     defaults = [query_param: "email"]
+    IO.puts("retrieve_panelist: #{user_id} opts:")
+    IO.inspect(opts)
     options = Keyword.merge(defaults, opts) |> Enum.into(%{})
     qp = Map.get(options, :query_param)
     # IO.puts("qp: #{qp}")
@@ -209,8 +213,9 @@ end
   @spec get_panelist(query_string, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
   defp get_panelist(query_string, opts \\ []) do
     country_code_iso = String.to_atom(Map.get(opts, :code_iso, "nil"))
+    isCountryExist = Application.get_env(:cint_api, CintApi)[country_code_iso]
 
-    if country_code_iso != nil do
+    if country_code_iso != nil and isCountryExist != nil do
       headers = headers(country_code_iso)
       client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
       try do
@@ -273,8 +278,9 @@ end
       # IO.puts("\n\nCintApi: create_candidate_respondent_session:")
       # IO.inspect(panelist)
       country_code_iso = String.to_atom(Map.get(opts, :code_iso, "nil"))
+      isCountryExist = Application.get_env(:cint_api, CintApi)[country_code_iso]
 
-      if country_code_iso != nil do
+      if country_code_iso != nil and isCountryExist != nil do
         headers = headers(country_code_iso)
         client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
         # headers = headers()
@@ -345,17 +351,24 @@ end
     IO.puts("\n\nCintApi: access_token: country_code_iso:")
     IO.inspect(country_code_iso)
     IO.inspect(countryKeys)
-
-    client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
-    client_secret = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_secret]
-    auth_token = Base.encode64("#{client_key}:#{client_secret}", padding: true) # padding: false
+    if countryKeys == nil do
+      nil
+    else
+      client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
+      client_secret = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_secret]
+      auth_token = Base.encode64("#{client_key}:#{client_secret}", padding: true) # padding: false
+    end
   end
 
 
   def access_token_header_basic(country_code_iso) do
     auth_token = access_token(country_code_iso)
-    token = "Basic #{auth_token}"
-    token
+    if auth_token == nil do
+      ""
+    else
+      token = "Basic #{auth_token}"
+      token
+    end
   end
 
   # Default headers added to all requests
