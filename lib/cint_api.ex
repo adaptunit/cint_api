@@ -191,10 +191,11 @@ end
   """
   @spec retrieve_panelist(user_id, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
   def retrieve_panelist(user_id, opts \\ []) do
-    defaults = [query_param: "email"]
+    defaults = %{query_param: "email"}
     IO.puts("retrieve_panelist: #{user_id} opts:")
     IO.inspect(opts)
-    options = Keyword.merge(defaults, opts) |> Enum.into(%{})
+    # options = Keyword.merge(defaults, opts) |> Enum.into(%{})
+    options = opts |> Enum.into(%{}) |> Map.merge(defaults) # |> Enum.into(%{})
     qp = Map.get(options, :query_param)
     # IO.puts("qp: #{qp}")
     # is_valid_param = if Enum.member?(["email", "member_id"], qp), do: :true, else: :false
