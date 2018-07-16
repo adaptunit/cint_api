@@ -77,7 +77,7 @@ end
        cint_request
      end
 
-    country_code_iso = String.to_atom(Map.get(opts, "ref_country", "nil"))
+    country_code_iso = String.to_atom(Map.get(opts, :code_iso, "nil"))
 
     if country_code_iso != nil do
       headers = headers(country_code_iso)
@@ -101,7 +101,7 @@ end
        e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
       end
     else
-     IO.puts("An error occurred: create_panelist_by_email: No `ref_country` options found")
+     IO.puts("An error occurred: create_panelist_by_email: No `code_iso` options found")
     end
 
     # with {:ok, %{body: json_body, status_code: 200}} <- CintApi.post("/panelists", Poison.encode!(cint_request), headers, []),
@@ -142,7 +142,7 @@ end
     IO.inspect(opts)
     # str_country_code_iso = Map.get(opts, :code_iso, nil)
     # country_code_iso = config(:client_key)
-    country_code_iso = String.to_atom(Map.get(opts, :ref_country, "nil"))
+    country_code_iso = String.to_atom(Map.get(opts, :code_iso, "nil"))
 
     if country_code_iso != nil do
       headers = headers(country_code_iso)
@@ -174,7 +174,7 @@ end
         {:error, %{status_code: 422, body: %{}}}
       end
     else
-      IO.puts("An error occurred: update_panelist: No `ref_country` options found")
+      IO.puts("An error occurred: update_panelist: No `code_iso` options found")
     end
   end
 
@@ -205,7 +205,7 @@ end
 
   @spec get_panelist(query_string, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
   defp get_panelist(query_string, opts \\ []) do
-    country_code_iso = String.to_atom(Map.get(opts, :ref_country, "nil"))
+    country_code_iso = String.to_atom(Map.get(opts, :code_iso, "nil"))
 
     if country_code_iso != nil do
       headers = headers(country_code_iso)
@@ -233,7 +233,7 @@ end
         e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
       end
       else
-        IO.puts("An error occurred: get_panelist: No `ref_country` options found")
+        IO.puts("An error occurred: get_panelist: No `code_iso` options found")
     end
 
     # with {:ok, %{body: json_body, status_code: 200}} <-
@@ -268,7 +268,7 @@ end
     if !is_nil(panelist) do
       # IO.puts("\n\nCintApi: create_candidate_respondent_session:")
       # IO.inspect(panelist)
-      country_code_iso = String.to_atom(Map.get(opts, :ref_country, "nil"))
+      country_code_iso = String.to_atom(Map.get(opts, :code_iso, "nil"))
 
       if country_code_iso != nil do
         headers = headers(country_code_iso)
