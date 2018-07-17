@@ -215,7 +215,8 @@ end
   defp get_panelist(query_string, opts \\ []) do
     country_code_iso = String.to_atom(Map.get(opts, :code_iso, "nil"))
     isCountryExist = Application.get_env(:cint_api, CintApi)[country_code_iso]
-
+    IO.puts("\n\nCintApi: get_panelist: opts:|")
+    IO.inspect(opts)
     if country_code_iso != nil and isCountryExist != nil do
       headers = headers(country_code_iso)
       client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
