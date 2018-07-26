@@ -87,17 +87,22 @@ end
       IO.inspect(headers)
 
       try do
-       {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post(client_key <> "/panelists", Poison.encode!(cint_request), headers, [])
-       IO.puts("\n\ncreate_panelist_by_email: email:|#{email}| json_body:|#{json_body}| code:|#{code}|")
-       # IO.inspect(json_body)
-       # IO.puts("\n\nresponse_headers:|#{}|")
-       # IO.inspect(response_headers)
-       case code
-       do
-        201 ->
-         {:ok, response} = Poison.decode(json_body)
-        _ ->
-         {:error, %{status_code: code, body: json_body}}
+       # {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post(client_key <> "/panelists", Poison.encode!(cint_request), headers, [recv_timeout: 50_000])
+       case CintApi.post(client_key <> "/panelists", Poison.encode!(cint_request), headers, [recv_timeout: 50_000]) do
+           {:ok, %{body: json_body, status_code: code, headers: response_headers}} ->
+               IO.puts("\n\ncreate_panelist_by_email: email:|#{email}| json_body:|#{json_body}| code:|#{code}|")
+               # IO.inspect(json_body)
+               # IO.puts("\n\nresponse_headers:|#{}|")
+               # IO.inspect(response_headers)
+               case code do
+                201 ->
+                    {:ok, response} = Poison.decode(json_body)
+                    _ ->
+                    {:error, %{status_code: code, body: json_body}}
+                end
+            {:error, errorReason} ->
+                IO.puts("\n\nError HTTPoison: client_key:| #{client_key} |")
+                IO.inspect(errorReason)
        end
       rescue
        e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
