@@ -27,8 +27,6 @@ defmodule CintApi do
   @spec process_url(String.t) :: String.t
   def process_url(url) do
     url_endpoint = config(:url) <> "panels/" <> url
-    #url_endpoint = config(:url) <> "panels/" <> config(:client_key) <> url
-    IO.puts("url_endpoint: #{url_endpoint}")
     url_endpoint
   end
 
@@ -68,7 +66,9 @@ end
   """
   @spec create_panelist_by_email(email, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
   def create_panelist_by_email(email, opts \\ []) do
-    cint_request = %{panelist: %{email_address: email}}
+    t = {:email_address, :gender, :member_id, :date_of_birth}
+    panelist_data = Map.take(opts, Tuple.to_list(t)) |> Enum.into(%{}) |> Map.merge(%{email_address: email})
+    cint_request = %{panelist: panelist_data}
     cint_request =
      case Map.has_key?(opts, :member_id) do
       true ->
@@ -83,17 +83,13 @@ end
     if country_code_iso != nil and isCountryExist != nil do
       headers = headers(country_code_iso)
       client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
-      IO.puts("\n\ncreate_panelist_by_email: #{client_key} headers:")
+      IO.puts("\n\ncreate_panelist_by_email: |#{email}| client_key:|#{client_key}|\nHeaders:")
       IO.inspect(headers)
 
       try do
-       # {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post(client_key <> "/panelists", Poison.encode!(cint_request), headers, [recv_timeout: 50_000])
        case CintApi.post(client_key <> "/panelists", Poison.encode!(cint_request), headers, [recv_timeout: 50_000]) do
            {:ok, %{body: json_body, status_code: code, headers: response_headers}} ->
                IO.puts("\n\ncreate_panelist_by_email: email:|#{email}| json_body:|#{json_body}| code:|#{code}|")
-               # IO.inspect(json_body)
-               # IO.puts("\n\nresponse_headers:|#{}|")
-               # IO.inspect(response_headers)
                case code do
                 201 ->
                     {:ok, response} = Poison.decode(json_body)
@@ -110,15 +106,6 @@ end
     else
      IO.puts("An error occurred: create_panelist_by_email: No `code_iso` options found")
     end
-
-    # with {:ok, %{body: json_body, status_code: 200}} <- CintApi.post("/panelists", Poison.encode!(cint_request), headers, []),
-    #   {:ok, response} <- Poison.decode(json_body)
-    # do
-    #   {:ok, response}
-    # else
-    #   {error_status} ->
-    #     CintApi.error_status(error_status)
-    # end
   end
 
   @doc """
@@ -144,32 +131,19 @@ end
   @spec update_panelist(email, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
   def update_panelist(panelist, opts \\ []) do
     cint_request = panelist # %{panelist: %{email_address: email}}
-
-    IO.puts("\n\nCintApi: update_panelist: opts:")
-    IO.inspect(opts)
-    # str_country_code_iso = Map.get(opts, :code_iso, nil)
-    # country_code_iso = config(:client_key)
     country_code_iso = String.to_atom(Map.get(opts, :code_iso, "nil"))
     isCountryExist = Application.get_env(:cint_api, CintApi)[country_code_iso]
 
     if country_code_iso != nil and isCountryExist != nil do
       headers = headers(country_code_iso)
-      IO.puts("\n\ncreate_panelist_by_email: headers:")
 
       if Map.has_key?(opts, :cint_id) do
         panelist_id = opts.cint_id # get_in(opts, ["cint_id"])
-        # IO.puts("\n\nCintApi: update_panelist:")
-        # IO.inspect(panelist_id)
-        # headers = headers()
         client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
 
         patch_panelist_address = client_key <> "/panelists/" <> Kernel.inspect(panelist_id)
         try do
          {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.patch(patch_panelist_address, Poison.encode!(cint_request), headers, [])
-         # IO.puts("\n\nCintApi: update_panelist: json_body:|#{json_body}| code:|#{code}|")
-         # IO.inspect(json_body)
-         # IO.puts("\n\nCintApi: update_panelist: response_headers:|#{}|")
-         # IO.inspect(response_headers)
          case code
          do
           201 ->
@@ -197,17 +171,12 @@ end
   @spec retrieve_panelist(user_id, Keyword.t) :: {:ok, map()} | {:error, Exception.t} | no_return
   def retrieve_panelist(user_id, opts \\ []) do
     defaults = %{query_param: "email"}
-    IO.puts("retrieve_panelist: #{user_id} opts:")
-    IO.inspect(opts)
-    # options = Keyword.merge(defaults, opts) |> Enum.into(%{})
-    options = opts |> Enum.into(%{}) |> Map.merge(defaults) # |> Enum.into(%{})
+
+    options = opts |> Enum.into(%{}) |> Map.merge(defaults)
     qp = Map.get(options, :query_param)
-    # IO.puts("qp: #{qp}")
-    # is_valid_param = if Enum.member?(["email", "member_id"], qp), do: :true, else: :false
     case qp do
       "email" ->
           email_host = Application.get_env(:cint_api, :email)[:host]
-          # IO.puts("email_host: #{email_host}")
           get_panelist("?#{qp}=#{user_id}@#{email_host}", opts)
       "member_id" ->
           get_panelist("?#{qp}=#{user_id}", opts)
@@ -220,20 +189,16 @@ end
   defp get_panelist(query_string, opts \\ []) do
     country_code_iso = String.to_atom(Map.get(opts, :code_iso, "nil"))
     isCountryExist = Application.get_env(:cint_api, CintApi)[country_code_iso]
-    IO.puts("\n\nCintApi: get_panelist: opts:|")
-    IO.inspect(opts)
+
     if country_code_iso != nil and isCountryExist != nil do
       headers = headers(country_code_iso)
       client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
       try do
        {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.get(client_key <> "/panelists/#{query_string}", headers, [])
-       # IO.puts("json_body:|#{json_body}| code:|#{code}| response_headers:|#{}|query_string:|#{query_string}|")
-       # IO.inspect(response_headers)
-        case code # == 200 and json_body != ""
+        case code
         do
          200 ->
           {:ok, response} = Poison.decode(json_body)
-          # {:ok, response}
          302 ->
           {:ok, response} = Poison.decode(json_body)
          404 ->
@@ -251,24 +216,7 @@ end
       else
         IO.puts("An error occurred: get_panelist: No `code_iso` options found")
     end
-
-    # with {:ok, %{body: json_body, status_code: 200}} <-
-    #  CintApi.get("/panelists/#{query_string}", headers, []),
-    #  IO.puts("json_body:|#{json_body}|"), # code:|#{code}|"),
-    #  {:ok, response} <- Poison.decode(json_body)
-    # do
-    #  IO.puts("response: #{response}")
-    #  {:ok, response}
-    # else
-    #  {error_status} ->
-    #    IO.puts("error_status: #{error_status}")
-    #    CintApi.error_status(error_status)
-    # end
   end
-  # user = if is_valid_param, do: user_id <> "@" <> Application.get_env(:client, :email)[:host], else: user_id
-  # email_host = Application.get_env(:client, :email)[:host]
-  # "@#{email_host}"
-
 
   @doc """
   Create Candidate Respondent Session.
@@ -282,23 +230,15 @@ end
   end
   def create_candidate_respondent_session(panelist, opts \\ []) when is_bitstring(panelist) do
     if !is_nil(panelist) do
-      # IO.puts("\n\nCintApi: create_candidate_respondent_session:")
-      # IO.inspect(panelist)
       country_code_iso = String.to_atom(Map.get(opts, :code_iso, "nil"))
       isCountryExist = Application.get_env(:cint_api, CintApi)[country_code_iso]
 
       if country_code_iso != nil and isCountryExist != nil do
         headers = headers(country_code_iso)
         client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
-        # headers = headers()
-        # IO.puts("\n\nCintApi: create_candidate_respondent_session: headers:")
-        # IO.inspect(headers)
-        candidate_respondents_address = client_key <> "/panelists/" <> panelist <> "/candidate_respondents"# <> Kernel.inspect(panelist)
-        # IO.inspect(candidate_respondents_address)
+        candidate_respondents_address = client_key <> "/panelists/" <> panelist <> "/candidate_respondents"
         try do
          {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post(candidate_respondents_address, Poison.encode!(%{}), headers, [])
-         # IO.puts("\n\nCintApi: create_candidate_respondent_session: json_body:|#{json_body}| code:|#{code}|")
-         # IO.inspect(response_headers)
           case code
           do
            201 ->
@@ -355,9 +295,8 @@ end
 """
   def access_token(country_code_iso) do
     countryKeys = Application.get_env(:cint_api, CintApi)[country_code_iso]
-    IO.puts("\n\nCintApi: access_token: country_code_iso:")
-    IO.inspect(country_code_iso)
-    IO.inspect(countryKeys)
+    IO.puts("\n\nCintApi: access_token: country_code_iso: |#{country_code_iso}|")
+
     if countryKeys == nil do
       nil
     else
