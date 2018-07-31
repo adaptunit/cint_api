@@ -4,6 +4,7 @@ defmodule CintApi do
   """
 
   use HTTPoison.Base
+  require Logger
 
 
   unless Application.get_env(:cint_api, CintApi) do
@@ -83,13 +84,12 @@ end
     if country_code_iso != nil and isCountryExist != nil do
       headers = headers(country_code_iso)
       client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
-      IO.puts("\n\ncreate_panelist_by_email: |#{email}| client_key:|#{client_key}|\nHeaders:")
-      IO.inspect(headers)
+      Logger.info "\ncreate_panelist_by_email: |#{email}| client_key:|#{client_key}|\nHeaders: #{inspect(headers)}"
 
       try do
        case CintApi.post(client_key <> "/panelists", Poison.encode!(cint_request), headers, [recv_timeout: 50_000]) do
            {:ok, %{body: json_body, status_code: code, headers: response_headers}} ->
-               IO.puts("\n\ncreate_panelist_by_email: email:|#{email}| json_body:|#{json_body}| code:|#{code}|")
+               Logger.info "\ncreate_panelist_by_email: email:|#{email}| json_body:|#{json_body}| code:|#{code}|"
                case code do
                 201 ->
                     {:ok, response} = Poison.decode(json_body)
@@ -97,14 +97,13 @@ end
                     {:error, %{status_code: code, body: json_body}}
                 end
             {:error, errorReason} ->
-                IO.puts("\n\nError HTTPoison: client_key:| #{client_key} |")
-                IO.inspect(errorReason)
+                Logger.info "\nError HTTPoison: client_key:| #{client_key} | errorReason:| #{inspect(errorReason)}"
        end
       rescue
-       e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
+       e in RuntimeError -> Logger.info "An error occurred: " <> e.message
       end
     else
-     IO.puts("An error occurred: create_panelist_by_email: No `code_iso` options found")
+     Logger.info "An error occurred: create_panelist_by_email: No `code_iso` options found"
     end
   end
 
@@ -152,13 +151,13 @@ end
            {:error, %{status_code: code, body: %{}}}
          end
         rescue
-         e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
+         e in RuntimeError -> Logger.info "An error occurred: " <> e.message
         end
       else
         {:error, %{status_code: 422, body: %{}}}
       end
     else
-      IO.puts("An error occurred: update_panelist: No `code_iso` options found")
+      Logger.info "An error occurred: update_panelist: No `code_iso` options found"
     end
   end
 
@@ -211,10 +210,10 @@ end
           # CintApi.error_status({:ok, %{status_code: code}})
         end
        rescue
-        e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
+        e in RuntimeError -> Logger.info "An error occurred: " <> e.message
       end
       else
-        IO.puts("An error occurred: get_panelist: No `code_iso` options found")
+        Logger.info "An error occurred: get_panelist: No `code_iso` options found"
     end
   end
 
@@ -251,7 +250,7 @@ end
             {:error, %{status_code: code, body: %{}}}
           end
          rescue
-          e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
+          e in RuntimeError -> Logger.info "An error occurred: " <> e.message
         end
       else
       end
@@ -295,7 +294,7 @@ end
 """
   def access_token(country_code_iso) do
     countryKeys = Application.get_env(:cint_api, CintApi)[country_code_iso]
-    IO.puts("\n\nCintApi: access_token: country_code_iso: |#{country_code_iso}|")
+    Logger.info "\nCintApi: access_token: country_code_iso: |#{country_code_iso}|"
 
     if countryKeys == nil do
       nil
