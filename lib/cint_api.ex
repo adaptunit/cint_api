@@ -84,12 +84,12 @@ end
     if country_code_iso != nil and isCountryExist != nil do
       headers = headers(country_code_iso)
       client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
-      Logger.info "\ncreate_panelist_by_email: |#{email}| client_key:|#{client_key}|\nHeaders: #{inspect(headers)}"
+      Logger.info "\nCintApi: create_panelist_by_email: |#{email}| client_key:|#{client_key}|\nHeaders: #{inspect(headers)}"
 
       try do
        case CintApi.post(client_key <> "/panelists", Poison.encode!(cint_request), headers, [recv_timeout: 50_000]) do
            {:ok, %{body: json_body, status_code: code, headers: response_headers}} ->
-               Logger.info "\ncreate_panelist_by_email: email:|#{email}| json_body:|#{json_body}| code:|#{code}|"
+               Logger.info "\nCintApi: create_panelist_by_email: email:|#{email}| json_body:|#{json_body}| code:|#{code}|"
                case code do
                 201 ->
                     {:ok, response} = Poison.decode(json_body)
@@ -97,13 +97,13 @@ end
                     {:error, %{status_code: code, body: json_body}}
                 end
             {:error, errorReason} ->
-                Logger.info "\nError HTTPoison: client_key:| #{client_key} | errorReason:| #{inspect(errorReason)}"
+                Logger.info "\nCintApi: Error HTTPoison: client_key:| #{client_key} | errorReason:| #{inspect(errorReason)}"
        end
       rescue
        e in RuntimeError -> Logger.info "An error occurred: " <> e.message
       end
     else
-     Logger.info "An error occurred: create_panelist_by_email: No `code_iso` options found"
+     Logger.info "\nCintApi: An error occurred: create_panelist_by_email: No `code_iso` options found"
     end
   end
 
@@ -157,7 +157,7 @@ end
         {:error, %{status_code: 422, body: %{}}}
       end
     else
-      Logger.info "An error occurred: update_panelist: No `code_iso` options found"
+      Logger.info "\nCintApi: An error occurred: update_panelist: No `code_iso` options found"
     end
   end
 
@@ -213,7 +213,7 @@ end
         e in RuntimeError -> Logger.info "An error occurred: " <> e.message
       end
       else
-        Logger.info "An error occurred: get_panelist: No `code_iso` options found"
+        Logger.info "\nCintApi: An error occurred: get_panelist: No `code_iso` options found"
     end
   end
 
@@ -231,13 +231,14 @@ end
     if !is_nil(panelist) do
       country_code_iso = String.to_atom(Map.get(opts, :code_iso, "nil"))
       isCountryExist = Application.get_env(:cint_api, CintApi)[country_code_iso]
-
+      Logger.info "\nCintApi: create_candidate_respondent_session: is_bitstring: panelist:|#{inspect(panelist)}| country_code_iso:|#{inspect(country_code_iso)}| isCountryExist:|#{inspect(isCountryExist)}|"
       if country_code_iso != nil and isCountryExist != nil do
         headers = headers(country_code_iso)
         client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
 
         requestEncodedJson = Poison.encode!(opts)
         Logger.info "\nCintApi: create_candidate_respondent_session: panelist:|#{inspect(panelist)}| opts:|#{inspect(opts)}| requestEncodedJson:|#{inspect(requestEncodedJson)}|"
+
         candidate_respondents_address = client_key <> "/panelists/" <> panelist <> "/candidate_respondents"
         try do
          {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post(candidate_respondents_address, requestEncodedJson, headers, [])
@@ -253,7 +254,7 @@ end
             {:error, %{status_code: code, body: %{}}}
           end
          rescue
-          e in RuntimeError -> Logger.info "An error occurred: " <> e.message
+          e in RuntimeError -> Logger.info "\n CintApi: An error occurred: " <> e.message
         end
       else
       end
@@ -261,6 +262,7 @@ end
   end
 
   def create_candidate_respondent_session(panelist, opts) when is_map(panelist) do
+    Logger.info "\nCintApi: create_candidate_respondent_session: is_map: panelist:|#{inspect(panelist)}| opts:|#{inspect(opts)}|"
     if Map.has_key?(panelist, :cint_id) do
       cinst_id = Map.get(panelist, :cint_id)
       cinst_id_str = Kernel.inspect(cinst_id)
