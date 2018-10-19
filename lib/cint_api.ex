@@ -234,7 +234,7 @@ end
       optsMap = opts |> Map.to_list
       Logger.info "\nCintApi: create_candidate_respondent_session: opts:|#{inspect(opts)}| optsMap:|#{inspect(optsMap)}|"
       # optsCint = Keyword.merge(optsMap, [:respondent_params, :quota_ids, :allow_routing, :min_cpi, :min_cr, :min_ir, :max_loi, :auto_accept_invitation]) |> Enum.map(fn {k,v}->{k,v} end) |> Map.new
-      optsCint = Map.take(optsMap, [:respondent_params, :quota_ids, :allow_routing, :min_cpi, :min_cr, :min_ir, :max_loi, :auto_accept_invitation])
+      optsCint = Map.take(opts, [:respondent_params, :quota_ids, :allow_routing, :min_cpi, :min_cr, :min_ir, :max_loi, :auto_accept_invitation])
       Logger.info "\nCintApi: create_candidate_respondent_session: is_bitstring: panelist:|#{inspect(panelist)}| country_code_iso:|#{inspect(country_code_iso)}| isCountryExist:|#{inspect(isCountryExist)}| optsCint:|#{inspect(optsCint)}|"
       if country_code_iso != nil and isCountryExist != nil do
         headers = headers(country_code_iso)
