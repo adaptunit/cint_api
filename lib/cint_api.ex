@@ -227,7 +227,7 @@ end
   def create_candidate_respondent_session(panelist, opts) when is_integer(panelist) do
     create_candidate_respondent_session(to_string(panelist), opts)
   end
-  def create_candidate_respondent_session(panelist, opts \\ []) when is_bitstring(panelist) do
+  def create_candidate_respondent_session(panelist, opts \\ %{}) when is_bitstring(panelist) do
     if !is_nil(panelist) do
       country_code_iso = String.to_atom(Map.get(opts, :code_iso, "nil"))
       isCountryExist = Application.get_env(:cint_api, CintApi)[country_code_iso]
@@ -235,9 +235,12 @@ end
       if country_code_iso != nil and isCountryExist != nil do
         headers = headers(country_code_iso)
         client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
+
+        requestEncodedJson = Poison.encode!(opts)
+        Logger.info "\nCintApi: create_candidate_respondent_session: panelist:|#{inspect(panelist)}| opts:|#{inspect(opts)}| requestEncodedJson:|#{inspect(requestEncodedJson)}|"
         candidate_respondents_address = client_key <> "/panelists/" <> panelist <> "/candidate_respondents"
         try do
-         {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post(candidate_respondents_address, Poison.encode!(%{}), headers, [])
+         {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post(candidate_respondents_address, requestEncodedJson, headers, [])
           case code
           do
            201 ->
