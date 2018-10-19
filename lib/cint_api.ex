@@ -231,12 +231,14 @@ end
     if !is_nil(panelist) do
       country_code_iso = String.to_atom(Map.get(opts, :code_iso, "nil"))
       isCountryExist = Application.get_env(:cint_api, CintApi)[country_code_iso]
-      Logger.info "\nCintApi: create_candidate_respondent_session: is_bitstring: panelist:|#{inspect(panelist)}| country_code_iso:|#{inspect(country_code_iso)}| isCountryExist:|#{inspect(isCountryExist)}|"
+      optsMap = opts |> Map.to_list
+      optsCint = Keyword.merge(optsMap, [:respondent_params, :quota_ids, :allow_routing, :min_cpi, :min_cr, :min_ir, :max_loi, :auto_accept_invitation]) |> Enum.map(fn {k,v}->{k,v} end) |> Map.new
+      Logger.info "\nCintApi: create_candidate_respondent_session: is_bitstring: panelist:|#{inspect(panelist)}| country_code_iso:|#{inspect(country_code_iso)}| isCountryExist:|#{inspect(isCountryExist)}| optsCint:|#{inspect(optsCint)}|"
       if country_code_iso != nil and isCountryExist != nil do
         headers = headers(country_code_iso)
         client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
 
-        requestEncodedJson = Poison.encode!(opts)
+        requestEncodedJson = Poison.encode!(optsCint)
         Logger.info "\nCintApi: create_candidate_respondent_session: panelist:|#{inspect(panelist)}| opts:|#{inspect(opts)}| requestEncodedJson:|#{inspect(requestEncodedJson)}|"
 
         candidate_respondents_address = client_key <> "/panelists/" <> panelist <> "/candidate_respondents"
