@@ -20,6 +20,11 @@ use Mix.Config
 #
 #     config :logger, level: :info
 #
+config :logger,
+    backends: [{LoggerFileBackend, :info_log}]
+config :logger, :info_log,
+      path: "/var/log/cint_api.info.log",
+      level: :error
 
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment

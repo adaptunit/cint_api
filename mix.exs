@@ -14,7 +14,8 @@ defmodule CintApi.Mixfile do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger],
+      applications: [:logger_file_backend],
     ]
   end
 
@@ -30,6 +31,7 @@ defmodule CintApi.Mixfile do
       {:phoenix_ecto, "~> 3.0"},
       {:earmark, ">= 0.0.0", only: :dev},
       {:ex_doc, ">= 0.0.0", only: :dev},
+      {:logger_file_backend, "~> 0.0.10"},
     ]
   end
 end
