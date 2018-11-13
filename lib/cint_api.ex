@@ -84,12 +84,14 @@ end
     if country_code_iso != nil and isCountryExist != nil do
       headers = headers(country_code_iso)
       client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
-      Logger.error "\nCintApi: create_panelist_by_email: |#{email}| client_key:|#{client_key}|\nHeaders: #{inspect(headers)}"
+      Logger.error "\nCintApi: create_panelist_by_email: email:|#{email}| client_key:|#{client_key}|"
 
       try do
-       case CintApi.post(client_key <> "/panelists", Poison.encode!(cint_request), headers, [recv_timeout: 50_000]) do
+       create_panelist_address = client_key <> "/panelists"
+       Logger.error "\nCintApi: create_panelist_by_email: create_panelist_address:|#{create_panelist_address}| cint_request:|#{inspect(cint_request)}| headers: #{inspect(headers)}"
+       case CintApi.post(create_panelist_address, Poison.encode!(cint_request), headers, [recv_timeout: 50_000]) do
            {:ok, %{body: json_body, status_code: code, headers: response_headers}} ->
-               Logger.error "\nCintApi: create_panelist_by_email: email:|#{email}| json_body:|#{json_body}| code:|#{code}|"
+               Logger.error "\nCintApi: create_panelist_by_email: email:|#{email}| code:|#{code}| json_body:|#{json_body}|"
                case code do
                 201 ->
                     {:ok, response} = Poison.decode(json_body)
@@ -143,6 +145,7 @@ end
         patch_panelist_address = client_key <> "/panelists/" <> Kernel.inspect(panelist_id)
         try do
          {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.patch(patch_panelist_address, Poison.encode!(cint_request), headers, [])
+         Logger.error "\nCintApi: update_panelist: response_headers:|#{inspect(response_headers)}| patch_panelist_address:|#{patch_panelist_address}| code:|#{code}| json_body:|#{json_body}|"
          case code
          do
           201 ->
@@ -194,6 +197,7 @@ end
       client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
       try do
        {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.get(client_key <> "/panelists/#{query_string}", headers, [])
+        Logger.error "\nCintApi: get_panelist: response_headers:|#{inspect(response_headers)}| query_string:|#{query_string}| code:|#{code}| json_body:|#{json_body}|"
         case code
         do
          200 ->
@@ -246,6 +250,7 @@ end
         candidate_respondents_address = client_key <> "/panelists/" <> panelist <> "/candidate_respondents"
         try do
          {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post(candidate_respondents_address, requestEncodedJson, headers, [])
+         Logger.error "\nCintApi: create_candidate_respondent_session: response_headers:|#{inspect(response_headers)}| code:|#{code}| json_body:|#{inspect(json_body)}|"
           case code
           do
            201 ->
