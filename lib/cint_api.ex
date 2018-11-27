@@ -196,7 +196,7 @@ end
       headers = headers(country_code_iso)
       client_key = Application.get_env(:cint_api, CintApi)[country_code_iso][:client_key]
       try do
-       {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.get(client_key <> "/panelists/#{query_string}", headers, [])
+       {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.get(client_key <> "/panelists/#{query_string}", headers, [recv_timeout: 50_000])
         Logger.error "\nCintApi: get_panelist: response_headers:|#{inspect(response_headers)}| query_string:|#{query_string}| code:|#{code}| json_body:|#{json_body}|"
         case code
         do
@@ -249,7 +249,7 @@ end
 
         candidate_respondents_address = client_key <> "/panelists/" <> panelist <> "/candidate_respondents"
         try do
-         {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post(candidate_respondents_address, requestEncodedJson, headers, [])
+         {:ok, %{body: json_body, status_code: code, headers: response_headers}} = CintApi.post(candidate_respondents_address, requestEncodedJson, headers, [recv_timeout: 50_000])
          Logger.error "\nCintApi: create_candidate_respondent_session: response_headers:|#{inspect(response_headers)}| code:|#{code}| json_body:|#{inspect(json_body)}|"
           case code
           do
